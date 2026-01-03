@@ -38,6 +38,7 @@ public class MyStarcraftBot : DefaultBWListener
     {
         InGame = true;
         StatusChanged?.Invoke();
+        Game?.EnableFlag(Flag.UserInput); // let human controll too
     }
 
     public override void OnEnd(bool isWinner)
