@@ -30,6 +30,7 @@ public class MyStarcraftBot : DefaultBWListener
         }
         _bwClient = null;
         IsRunning = false;
+        InGame = false;
         StatusChanged?.Invoke();
     }
 
@@ -38,7 +39,7 @@ public class MyStarcraftBot : DefaultBWListener
     {
         InGame = true;
         StatusChanged?.Invoke();
-        Game?.EnableFlag(Flag.UserInput); // let human controll too
+        Game?.EnableFlag(Flag.UserInput); // let human control too
     }
 
     public override void OnEnd(bool isWinner)
