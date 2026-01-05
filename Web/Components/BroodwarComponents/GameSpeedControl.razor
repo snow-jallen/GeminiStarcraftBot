@@ -1,0 +1,42 @@
+@using Shared
+@inject MyStarcraftBot myStarcraftBot
+@implements IDisposable
+
+<div class="card mb-3">
+    <div class="card-body">
+        <label class="form-label">Game Speed (ms per frame): @(_gameSpeed == -1 ? "Default" : _gameSpeed == 0 ? "Fastest" : _gameSpeed == 42 ? "Normal (Standard)" : _gameSpeed.ToString())</label>
+        <div class="btn-group w-100 mt-2" role="group">
+            <button type="button" class="btn @(_gameSpeed == -1 ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetSpeed(-1)">Default</button>
+            <button type="button" class="btn @(_gameSpeed == 0 ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetSpeed(0)">Fastest</button>
+            <button type="button" class="btn @(_gameSpeed == 1 ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetSpeed(1)">Fast</button>
+            <button type="button" class="btn @(_gameSpeed == 42 ? "btn-primary" : "btn-outline-primary")" @onclick="() => SetSpeed(42)">Normal</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int _gameSpeed = -1;
+
+    protected override void OnInitialized()
+    {
+        myStarcraftBot.StatusChanged += Reload;
+    }
+
+    private void SetSpeed(int speed)
+    {
+        _gameSpeed = speed;
+        UpdateGameSpeed();
+    }
+
+    private void UpdateGameSpeed()
+    {
+        myStarcraftBot.GameSpeedToSet = _gameSpeed;
+    }
+
+    public void Dispose()
+    {
+        myStarcraftBot.StatusChanged -= Reload;
+    }
+
+    private void Reload() => InvokeAsync(StateHasChanged);
+}

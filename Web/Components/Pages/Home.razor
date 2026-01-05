@@ -1,8 +1,29 @@
 ﻿@page "/"
 @using Web.Components.BroodwarComponents
+@using Shared
+@inject MyStarcraftBot myStarcraftBot
 @rendermode InteractiveServer
+@implements IDisposable
 
 <PageTitle>Starcraft Bot</PageTitle>
 
+    <LaunchControl />
+@if(myStarcraftBot.InGame)
+{
+    <GameSpeedControl />
+}
 
-<LaunchControl />
+
+@code {
+    protected override void OnInitialized()
+    {
+        myStarcraftBot.StatusChanged += Reload;
+    }
+
+    public void Dispose()
+    {
+        myStarcraftBot.StatusChanged -= Reload;
+    }
+
+    private void Reload() => InvokeAsync(StateHasChanged);
+}

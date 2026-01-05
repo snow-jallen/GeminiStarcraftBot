@@ -11,6 +11,7 @@ public class MyStarcraftBot : DefaultBWListener
 
     public bool IsRunning { get; private set; } = false;
     public bool InGame { get; private set; } = false;
+    public int? GameSpeedToSet { get; set; } = null;
 
     public event Action? StatusChanged;
 
@@ -52,6 +53,11 @@ public class MyStarcraftBot : DefaultBWListener
     {
         if (Game == null)
             return;
+        if (GameSpeedToSet != null)
+        {
+            Game.SetLocalSpeed(GameSpeedToSet.Value);
+            GameSpeedToSet = null;
+        }
         Game.DrawTextScreen(100, 100, "Hello Bot!");
     }
 
