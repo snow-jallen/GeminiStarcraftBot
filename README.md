@@ -21,55 +21,55 @@ Dave Churchill made two youtube videos as part of this "AI for Video Games" coll
 
 Explanation of starcraft for somebody who has never played a Real Time Strategy game before.
 
-- [00:00 - Introduction / Links](https://www.youtube.com/watch?v=czhNqUxmLks)
-- [02:13 - What is Starcraft / RTS?](https://www.youtube.com/watch?v=czhNqUxmLks&t=133s)
-- [05:23 - Basic RTS Strategies](https://www.youtube.com/watch?v=czhNqUxmLks&t=323s)
-- [08:31 - Starcraft Races](https://www.youtube.com/watch?v=czhNqUxmLks&t=511s)
-- [10:28 - Terran Overview](https://www.youtube.com/watch?v=czhNqUxmLks&t=628s)
-- [13:06 - Protoss Overview](https://www.youtube.com/watch?v=czhNqUxmLks&t=786s)
-- [15:26 - Zerg Overview](https://www.youtube.com/watch?v=czhNqUxmLks&t=926s)
+- [00:00](https://www.youtube.com/watch?v=czhNqUxmLks) - Introduction / Links
+- [02:13](https://www.youtube.com/watch?v=czhNqUxmLks&t=133s) - What is Starcraft / RTS?
+- [05:23](https://www.youtube.com/watch?v=czhNqUxmLks&t=323s) - Basic RTS Strategies
+- [08:31](https://www.youtube.com/watch?v=czhNqUxmLks&t=511s) - Starcraft Races
+- [10:28](https://www.youtube.com/watch?v=czhNqUxmLks&t=628s) - Terran Overview
+- [13:06](https://www.youtube.com/watch?v=czhNqUxmLks&t=786s) - Protoss Overview
+- [15:26](https://www.youtube.com/watch?v=czhNqUxmLks&t=926s) - Zerg Overview
 
 Basic game mechanics
 
-- [18:37 - Example Game Scenario](https://www.youtube.com/watch?v=czhNqUxmLks&t=1117s)
-- [20:55 - What is a Build Order?](https://www.youtube.com/watch?v=czhNqUxmLks&t=1255s)
-- [23:19 - Starcraft Game Play Demo / Tutorial](https://www.youtube.com/watch?v=czhNqUxmLks&t=1399s)
-- [36:48 - Build Order Considerations](https://www.youtube.com/watch?v=czhNqUxmLks&t=2208s)
+- [18:37](https://www.youtube.com/watch?v=czhNqUxmLks&t=1117s) - Example Game Scenario
+- [20:55](https://www.youtube.com/watch?v=czhNqUxmLks&t=1255s) - What is a Build Order?
+- [23:19](https://www.youtube.com/watch?v=czhNqUxmLks&t=1399s) - Starcraft Game Play Demo / Tutorial
+- [36:48](https://www.youtube.com/watch?v=czhNqUxmLks&t=2208s) - Build Order Considerations
 
 Talking about BroodWar API (BWAPI) - he uses the C++ version, all the classes, functions, and data types are the same on the C# version
 
-- [38:32 - BWAPI Introduction](https://www.youtube.com/watch?v=czhNqUxmLks&t=2312s)
-- [41:35 - STARTcraft Github Project (starter code project)](https://www.youtube.com/watch?v=czhNqUxmLks&t=2495s)
+- [38:32](https://www.youtube.com/watch?v=czhNqUxmLks&t=2312s) - BWAPI Introduction
+- [41:35](https://www.youtube.com/watch?v=czhNqUxmLks&t=2495s) - STARTcraft Github Project (starter code project)
 
 Start here if you already know about StarCraft. Goes over how to control units with code.
 
-- [44:08 - Starcraft Unit Commands in BWAPI](https://www.youtube.com/watch?v=czhNqUxmLks&t=2648s)
-- [49:34 - Starcraft Unit Properties](https://www.youtube.com/watch?v=czhNqUxmLks&t=2974s)
-- [52:53 - BWAPI Important Classes](https://www.youtube.com/watch?v=czhNqUxmLks&t=3173s)
+- [44:08](https://www.youtube.com/watch?v=czhNqUxmLks&t=2648s) - Starcraft Unit Commands in BWAPI
+- [49:34](https://www.youtube.com/watch?v=czhNqUxmLks&t=2974s) - Starcraft Unit Properties
+- [52:53](https://www.youtube.com/watch?v=czhNqUxmLks&t=3173s) - BWAPI Important Classes
 
 Getting your economy started
 
-- [59:40 - BWAPI Resource Gathering Code](https://www.youtube.com/watch?v=czhNqUxmLks&t=3580s)
+- [59:40](https://www.youtube.com/watch?v=czhNqUxmLks&t=3580s) - BWAPI Resource Gathering Code
 
 GAmeplay overview of building an army and attacking
 
-- [1:07:49 - Starcraft Army Composition](https://www.youtube.com/watch?v=czhNqUxmLks&t=4069s)
-- [1:08:23 - Starcraft Tech Tree](https://www.youtube.com/watch?v=czhNqUxmLks&t=4103s)
-- [1:10:42 - Starcraft Maps: Chokepoints, Expansions, and Islands](https://www.youtube.com/watch?v=czhNqUxmLks&t=4242s)
-- [1:15:18 - Fog of War + Invisible Units](https://www.youtube.com/watch?v=czhNqUxmLks&t=4518s)
-- [1:17:09 - Starcraft Base Progression](https://www.youtube.com/watch?v=czhNqUxmLks&t=4629s)
+- [1:07:49](https://www.youtube.com/watch?v=czhNqUxmLks&t=4069s) - Starcraft Army Composition
+- [1:08:23](https://www.youtube.com/watch?v=czhNqUxmLks&t=4103s) - Starcraft Tech Tree
+- [1:10:42](https://www.youtube.com/watch?v=czhNqUxmLks&t=4242s) - Starcraft Maps: Chokepoints, Expansions, and Islands
+- [1:15:18](https://www.youtube.com/watch?v=czhNqUxmLks&t=4518s) - Fog of War + Invisible Units
+- [1:17:09](https://www.youtube.com/watch?v=czhNqUxmLks&t=4629s) - Starcraft Base Progression
 
 Learning more about starcraft maps on a technical level
 
-- [1:19:43 - Starcraft Grid / Positioning Systems](https://www.youtube.com/watch?v=czhNqUxmLks&t=4783s)
-- [1:31:26 - Map Analysis Libraries](https://www.youtube.com/watch?v=czhNqUxmLks&t=5486s)
-- [1:32:32 - BWAPI Example Scouting Code](https://www.youtube.com/watch?v=czhNqUxmLks&t=5552s)
+- [1:19:43](https://www.youtube.com/watch?v=czhNqUxmLks&t=4783s) - Starcraft Grid / Positioning Systems
+- [1:31:26](https://www.youtube.com/watch?v=czhNqUxmLks&t=5486s) - Map Analysis Libraries
+- [1:32:32](https://www.youtube.com/watch?v=czhNqUxmLks&t=5552s) - BWAPI Example Scouting Code
 
 Bot architecture ideas
 
-- [1:37:42 - Starcraft AI Combat Note](https://www.youtube.com/watch?v=czhNqUxmLks&t=5862s)
-- [1:39:49 - Starcraft AI Bot Logic Flow](https://www.youtube.com/watch?v=czhNqUxmLks&t=5989s)
-- [1:40:11 - STARTcraft Demo](https://www.youtube.com/watch?v=czhNqUxmLks&t=6011s)
+- [1:37:42](https://www.youtube.com/watch?v=czhNqUxmLks&t=5862s) - Starcraft AI Combat Note
+- [1:39:49](https://www.youtube.com/watch?v=czhNqUxmLks&t=5989s) - Starcraft AI Bot Logic Flow
+- [1:40:11](https://www.youtube.com/watch?v=czhNqUxmLks&t=6011s) - STARTcraft Demo
 
 ### Dave Churchill Broodwar AI Programming Tutorial
 
