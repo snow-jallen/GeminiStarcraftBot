@@ -73,6 +73,13 @@
                     Manual Launch (Join Game Yourself)
                 </button>
             </div>
+            
+            <div class="mt-4 border-top pt-3">
+                <p class="text-muted small mb-2">If the game window is stuck open:</p>
+                <button class="btn btn-outline-danger btn-sm" @onclick="ForceClose">
+                    Troubleshoot: Force Close StarCraft
+                </button>
+            </div>
         </div>
     }
     else if (_isLaunching)
@@ -153,11 +160,19 @@
         myStarcraftBot.StatusChanged += Refresh;
     }
 
+    private bool _wasInGame = false;
+
     private void Refresh()
     {
         if (myStarcraftBot.InGame)
         {
             _isLaunching = false;
+            _wasInGame = true;
+        }
+        else if (_wasInGame)
+        {
+            _wasInGame = false;
+            CloseGame();
         }
         InvokeAsync(StateHasChanged);
     }
@@ -239,6 +254,11 @@
             AutoMenu = "OFF"
         });
         await InvokeAsync(StateHasChanged);
+    }
+
+    private void ForceClose()
+    {
+        starCraftService.StopAndReset();
     }
 
     private void CloseGame()
