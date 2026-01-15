@@ -432,7 +432,7 @@ public class ArmyManager
 
     private Unit? SelectBestTarget(List<Unit> army, List<Unit> enemies)
     {
-        if (!enemies.Any())
+        if (!enemies.Any() || !army.Any())
             return null;
 
         // Target priority:
