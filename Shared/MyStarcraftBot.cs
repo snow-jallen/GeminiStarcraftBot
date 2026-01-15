@@ -1,5 +1,9 @@
 using BWAPI.NET;
 using System.Linq;
+using Shared.Managers;
+using Shared.Intelligence;
+using Shared.BuildOrders;
+using Shared.Utils;
 
 namespace Shared;
 
@@ -13,13 +17,21 @@ public class MyStarcraftBot : DefaultBWListener
     public bool IsRunning { get; private set; } = false;
     public bool InGame { get; private set; } = false;
     public int? GameSpeedToSet { get; set; } = null;
-    
-    // Build Order Fields
-    private bool _openingComplete = false;
-    private int _scoutUnitId = -1; // Keep for future use or if we re-enable scouting later
-    private bool _isAttacking = false;
-    private int _currentScoutLocationIndex = 0;
-    
+
+    // Manager instances
+    private ScoutingIntelligence? _scoutingIntel;
+    private ThreatAssessment? _threatAssessment;
+    private MapAnalysis? _mapAnalysis;
+    private BuildOrderManager? _buildOrderManager;
+    private EconomyManager? _economyManager;
+    private TechManager? _techManager;
+    private BuildManager? _buildManager;
+    private WorkerManager? _workerManager;
+    private ArmyManager? _armyManager;
+
+    // Scout tracking
+    private int _scoutUnitId = -1;
+
     public event Action? StatusChanged;
 
     public void Connect()
@@ -48,14 +60,27 @@ public class MyStarcraftBot : DefaultBWListener
         InGame = true;
         StatusChanged?.Invoke();
         Game?.EnableFlag(Flag.UserInput); // let human control too
-        
-        // Set game speed to match fastest
+
+        // Set game speed
         Game?.SetLocalSpeed(20);
-        _openingComplete = false;
+
+        // Initialize all managers
+        _scoutingIntel = new ScoutingIntelligence();
+        _threatAssessment = new ThreatAssessment();
+        _mapAnalysis = new MapAnalysis();
+        _buildOrderManager = new BuildOrderManager();
+        _economyManager = new EconomyManager();
+        _techManager = new TechManager();
+        _buildManager = new BuildManager();
+        _workerManager = new WorkerManager();
+        _armyManager = new ArmyManager();
+
         _scoutUnitId = -1;
-        _currentScoutLocationIndex = 0;
-        _isAttacking = false;
-        Console.WriteLine("Bot Started!");
+
+        Console.WriteLine("Bot Started with Modular Architecture!");
+        Console.WriteLine("=== GeminiAscendant v2.0 ===");
+        Console.WriteLine("Born from Gemini, Elevated by Claude");
+        Console.WriteLine("Features: Scouting, Tech Tree, Defense, Micro, Adaptive Builds");
     }
 
     public override void OnEnd(bool isWinner)
@@ -65,476 +90,134 @@ public class MyStarcraftBot : DefaultBWListener
         Console.WriteLine(isWinner ? "We Won!" : "We Lost.");
     }
 
-    // Returns true if we are in the middle of an opening build order (and should block other "smart" logic)
-    private bool ExecuteOpening(Player self)
-    {
-        if (_openingComplete) return false;
-
-        var units = self.GetUnits();
-        var race = self.GetRace();
-        
-        // Supply values are doubled in BWAPI (9 supply = 18)
-        int supply = self.SupplyUsed();
-
-        if (race == Race.Terran)
-        {
-            // 8 Depot (16 supply)
-            if (supply >= 16 && units.Count(u => u.GetUnitType() == UnitType.Terran_Supply_Depot) < 1)
-            {
-                BuildStructure(self, UnitType.Terran_Supply_Depot);
-                return true; // Blocking
-            }
-            // 10 Barracks (20 supply)
-            if (supply >= 20 && units.Count(u => u.GetUnitType() == UnitType.Terran_Barracks) < 1)
-            {
-                BuildStructure(self, UnitType.Terran_Barracks);
-                return true;
-            }
-            // 12 Barracks (24 supply)
-            if (supply >= 24 && units.Count(u => u.GetUnitType() == UnitType.Terran_Barracks) < 2)
-            {
-                BuildStructure(self, UnitType.Terran_Barracks);
-                return true;
-            }
-            // 14 Depot (28 supply)
-            if (supply >= 28 && units.Count(u => u.GetUnitType() == UnitType.Terran_Supply_Depot) < 2)
-            {
-                BuildStructure(self, UnitType.Terran_Supply_Depot);
-                return true;
-            }
-            // If we have 2 Barracks and 2 Depots, opening is done
-            if (units.Count(u => u.GetUnitType() == UnitType.Terran_Barracks) >= 2 && 
-                units.Count(u => u.GetUnitType() == UnitType.Terran_Supply_Depot) >= 2)
-            {
-                _openingComplete = true;
-                return false;
-            }
-            return true; // Still in opening phase
-        }
-        else if (race == Race.Protoss)
-        {
-            // 8 Pylon (16 supply)
-            if (supply >= 16 && units.Count(u => u.GetUnitType() == UnitType.Protoss_Pylon) < 1)
-            {
-                BuildStructure(self, UnitType.Protoss_Pylon);
-                return true;
-            }
-            // 10 Gateway (20 supply)
-            if (supply >= 20 && units.Count(u => u.GetUnitType() == UnitType.Protoss_Gateway) < 1)
-            {
-                BuildStructure(self, UnitType.Protoss_Gateway);
-                return true;
-            }
-            // 12 Gateway (24 supply)
-            if (supply >= 24 && units.Count(u => u.GetUnitType() == UnitType.Protoss_Gateway) < 2)
-            {
-                BuildStructure(self, UnitType.Protoss_Gateway);
-                return true;
-            }
-            // 14 Pylon (28 supply)
-            if (supply >= 28 && units.Count(u => u.GetUnitType() == UnitType.Protoss_Pylon) < 2)
-            {
-                BuildStructure(self, UnitType.Protoss_Pylon);
-                return true;
-            }
-            
-            if (units.Count(u => u.GetUnitType() == UnitType.Protoss_Gateway) >= 2 && 
-                units.Count(u => u.GetUnitType() == UnitType.Protoss_Pylon) >= 2)
-            {
-                _openingComplete = true;
-                return false;
-            }
-            return true;
-        }
-        else if (race == Race.Zerg)
-        {
-            // 9 Pool (18 supply)
-            if (supply >= 18 && units.Count(u => u.GetUnitType() == UnitType.Zerg_Spawning_Pool) < 1)
-            {
-                BuildStructure(self, UnitType.Zerg_Spawning_Pool);
-                return true;
-            }
-            // 9 Pool usually implies getting lings immediately, but simple completion check is fine.
-
-            if (units.Count(u => u.GetUnitType() == UnitType.Zerg_Spawning_Pool) >= 1)
-            {
-                _openingComplete = true;
-                return false;
-            }
-            return true;
-        }
-
-        _openingComplete = true; // Default fallback
-        return false;
-    }
-
-    private void BuildStructure(Player self, UnitType building)
-    {
-        if (self.Minerals() < building.MineralPrice()) return;
-
-        // Check if already building
-        bool alreadyBuilding = self.GetUnits().Any(u => 
-            (u.GetUnitType() == building && !u.IsCompleted()) || 
-            (u.GetUnitType().IsWorker() && u.GetBuildType() == building));
-            
-        if (alreadyBuilding) return;
-
-        var worker = self.GetUnits().FirstOrDefault(u => u.GetUnitType().IsWorker() && (u.IsIdle() || u.IsGatheringMinerals()));
-        if (worker != null)
-        {
-             var buildLocation = GetBuildLocation(worker.GetTilePosition(), building);
-             if (buildLocation != null)
-             {
-                 worker.Build(building, buildLocation.Value);
-             }
-        }
-    }
 
     public override void OnFrame()
     {
         if (Game == null)
             return;
-        
+
         if (GameSpeedToSet != null)
         {
             Game.SetLocalSpeed(GameSpeedToSet.Value);
             GameSpeedToSet = null;
         }
-        
+
         var self = Game.Self();
         if (self == null) return;
 
         try
         {
-            var allMyUnits = self.GetUnits();
-            var army = allMyUnits.Where(u => !u.GetUnitType().IsWorker() && !u.GetUnitType().IsBuilding() && !u.GetUnitType().IsRefinery() && u.GetUnitType() != UnitType.Zerg_Overlord && u.GetUnitType() != UnitType.Zerg_Larva).ToList();
-            int baseCount = allMyUnits.Count(u => u.GetUnitType().IsResourceDepot());
-            
-            // 0. Build Order Status
-            bool isInOpening = ExecuteOpening(self);
+            // ===== 1. INTELLIGENCE GATHERING =====
+            _scoutingIntel!.Update(Game);
+            _threatAssessment!.Update(Game, self, _scoutingIntel);
+            _mapAnalysis!.Update(Game, self);
 
-            // Use methods for properties
-            Game.DrawTextScreen(10, 10, $"Supply: {self.SupplyUsed()} / {self.SupplyTotal()}");
-            Game.DrawTextScreen(10, 20, $"Minerals: {self.Minerals()}");
-            Game.DrawTextScreen(10, 30, $"Workers: {allMyUnits.Count(u => u.GetUnitType().IsWorker())} (Idle: {allMyUnits.Count(u => u.GetUnitType().IsWorker() && u.IsIdle())})");
-            Game.DrawTextScreen(10, 40, $"Army: {army.Count}");
-            Game.DrawTextScreen(10, 50, $"Bases: {baseCount}");
-            Game.DrawTextScreen(10, 80, $"Opening Active: {isInOpening}");
-            
-            // Scout Logic...
-            var scout = allMyUnits.FirstOrDefault(u => u.GetID() == _scoutUnitId);
-            if (scout == null || !scout.Exists())
+            // ===== 2. STRATEGIC PLANNING =====
+            _buildOrderManager!.Update(Game, self, _scoutingIntel, _mapAnalysis);
+            _economyManager!.Update(Game, self, _scoutingIntel, _buildOrderManager);
+            _techManager!.Update(Game, self, _scoutingIntel, _buildOrderManager);
+
+            // ===== 3. TACTICAL EXECUTION =====
+            _buildManager!.Update(Game, self, _workerManager);
+            _workerManager!.Update(Game, self, _threatAssessment, _economyManager);
+            _armyManager!.Update(Game, self, _threatAssessment, _scoutingIntel, _techManager);
+
+            // ===== 4. SUPPORT SYSTEMS =====
+            ManageScout(self);
+            DrawDebugInfo(self);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"ERROR in OnFrame: {e.Message}");
+            Console.WriteLine($"Stack trace: {e.StackTrace}");
+            Game.DrawTextScreen(10, 200, $"ERROR: {e.Message}");
+        }
+    }
+
+    private void ManageScout(Player self)
+    {
+        var scout = self.GetUnits().FirstOrDefault(u => u.GetID() == _scoutUnitId);
+
+        // Assign new scout if needed
+        if (scout == null || !scout.Exists())
+        {
+            var newScout = self.GetIdleWorkers().FirstOrDefault();
+            if (newScout != null)
             {
-                var newScout = allMyUnits.FirstOrDefault(u => u.GetUnitType().IsWorker() && u.IsIdle());
-                if (newScout != null)
-                {
-                    _scoutUnitId = newScout.GetID();
-                    scout = newScout;
-                }
+                _scoutUnitId = newScout.GetID();
+                _workerManager!.AssignScout(_scoutUnitId);
+                scout = newScout;
             }
+        }
 
-            if (scout != null)
+        // Send scout to next location
+        if (scout != null && Game != null)
+        {
+            var targetLocation = _scoutingIntel!.GetNextScoutLocation(Game);
+            if (targetLocation != null)
             {
-                var startLocations = Game.GetStartLocations();
-                if (_currentScoutLocationIndex < startLocations.Count)
+                var targetPos = new Position(targetLocation.Value.X * 32, targetLocation.Value.Y * 32);
+                if (scout.GetDistance(targetPos) > 100)
                 {
-                    var target = startLocations[_currentScoutLocationIndex];
-                    Position targetPos = new Position(target.X * 32, target.Y * 32);
-                    
-                    Game.DrawTextScreen(10, 70, $"Scout Status: Moving to Location {_currentScoutLocationIndex + 1}/{startLocations.Count}");
-                    
-                    if (scout.GetDistance(targetPos) < 100)
-                    {
-                        _currentScoutLocationIndex = (_currentScoutLocationIndex + 1) % startLocations.Count;
-                    }
-                    else if (!scout.IsMoving())
+                    if (!scout.IsMoving() && !scout.IsGatheringMinerals())
                     {
                         scout.Move(targetPos);
                     }
                 }
-            }
-
-            // 1. Worker Management
-            foreach (var myUnit in allMyUnits)
-            {
-                if (myUnit.GetUnitType().IsWorker() && myUnit.IsIdle() && myUnit.GetID() != _scoutUnitId)
-                {
-                    var closestMineral = Game.GetMinerals()
-                        .OrderBy(m => myUnit.GetDistance(m))
-                        .FirstOrDefault();
-                        
-                    if (closestMineral != null)
-                    {
-                        myUnit.Gather(closestMineral);
-                    }
-                }
-            }
-
-            // 2. Train Workers
-            // Don't train workers if we are in an opening that needs to save money for buildings
-            // But for these openings, we usually want constant worker production UNLESS we are waiting for a specific building like Pool/Gateway
-            // A simple heuristic: If in opening and Minerals < 150, stop worker production to ensure we hit the building timing.
-            bool stopWorkersForOpening = isInOpening && self.Minerals() < 150;
-            
-            // Original throttle logic: < 20 workers or > 200 minerals
-            if (!stopWorkersForOpening && self.Minerals() >= 50 && self.SupplyUsed() < self.SupplyTotal() && (allMyUnits.Count(u => u.GetUnitType().IsWorker()) < 20 || self.Minerals() > 200))
-            {
-                foreach (var myUnit in allMyUnits)
-                {
-                    if (myUnit.GetUnitType().IsResourceDepot() && !myUnit.IsTraining())
-                    {
-                        myUnit.Train(self.GetRace().GetWorker());
-                    }
-                }
-            }
-
-            // 3. Supply Management (SKIP if in opening - opening handles its own supply depots/pylons)
-            if (!isInOpening && self.SupplyTotal() - self.SupplyUsed() <= 6 && self.SupplyTotal() < 400)
-            {
-                if (self.Minerals() >= 100)
-                {
-                    var supplyProvider = self.GetRace().GetSupplyProvider();
-                    bool alreadyBuilding = allMyUnits.Any(u => 
-                        (u.GetUnitType() == supplyProvider && !u.IsCompleted()) || 
-                        (u.GetUnitType().IsWorker() && u.GetBuildType() == supplyProvider));
-
-                    if (!alreadyBuilding)
-                    {
-                        if (self.GetRace() == Race.Zerg)
-                        {
-                            var larva = allMyUnits.FirstOrDefault(u => u.GetUnitType() == UnitType.Zerg_Larva);
-                            if (larva != null) larva.Train(UnitType.Zerg_Overlord);
-                        }
-                        else
-                        {
-                            var worker = allMyUnits.FirstOrDefault(u => u.GetUnitType().IsWorker() && u.GetID() != _scoutUnitId && (u.IsIdle() || u.IsGatheringMinerals()));
-                            if (worker != null)
-                            {
-                                var buildLocation = GetBuildLocation(worker.GetTilePosition(), supplyProvider);
-                                if (buildLocation != null) worker.Build(supplyProvider, buildLocation.Value);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 4. Expansion (SKIP if in opening)
-            if (!isInOpening)
-            {
-                int expansionCost = self.GetRace() == Race.Zerg ? 300 : 400;
-                if (self.Minerals() >= expansionCost)
-                {
-                     var resourceDepot = self.GetRace().GetResourceDepot();
-                     bool alreadyBuilding = allMyUnits.Any(u => 
-                        (u.GetUnitType() == resourceDepot && !u.IsCompleted()) || 
-                        (u.GetUnitType().IsWorker() && u.GetBuildType() == resourceDepot));
-
-                     if (!alreadyBuilding)
-                     {
-                         var myStart = self.GetStartLocation();
-                         var potentialExpansions = Game.GetStartLocations()
-                             .Where(sl => sl.X != myStart.X || sl.Y != myStart.Y)
-                             .OrderBy(sl => Math.Sqrt(Math.Pow(sl.X - myStart.X, 2) + Math.Pow(sl.Y - myStart.Y, 2)))
-                             .ToList();
-
-                         foreach (var exp in potentialExpansions)
-                         {
-                             bool occupied = allMyUnits.Any(u => u.GetUnitType().IsResourceDepot() && 
-                                Math.Abs(u.GetTilePosition().X - exp.X) < 10 && 
-                                Math.Abs(u.GetTilePosition().Y - exp.Y) < 10);
-                             
-                             if (!occupied)
-                             {
-                                 if (Game.CanBuildHere(exp, resourceDepot))
-                                 {
-                                     var worker = allMyUnits.FirstOrDefault(u => u.GetUnitType().IsWorker() && u.GetID() != _scoutUnitId && (u.IsIdle() || u.IsGatheringMinerals()));
-                                     if (worker != null)
-                                     {
-                                         worker.Build(resourceDepot, exp);
-                                         break; 
-                                     }
-                                 }
-                             }
-                         }
-                     }
-                }
-            }
-
-            // 5. Build Army Production Buildings
-            UnitType productionBuilding = GetBasicProductionBuilding(self.GetRace());
-            if (!isInOpening && (baseCount >= 2 || self.Minerals() > 500) && productionBuilding != UnitType.None && self.Minerals() >= 150) 
-            {
-                 int count = allMyUnits.Count(u => u.GetUnitType() == productionBuilding);
-                 if (count < 5)
-                 {
-                     bool alreadyBuilding = allMyUnits.Any(u => 
-                        (u.GetUnitType() == productionBuilding && !u.IsCompleted()) || 
-                        (u.GetUnitType().IsWorker() && u.GetBuildType() == productionBuilding));
-                     
-                     if (!alreadyBuilding)
-                     {
-                          var worker = allMyUnits.FirstOrDefault(u => u.GetUnitType().IsWorker() && u.GetID() != _scoutUnitId && (u.IsIdle() || u.IsGatheringMinerals()));
-                          if (worker != null)
-                          {
-                              var buildLocation = GetBuildLocation(worker.GetTilePosition(), productionBuilding);
-                              if (buildLocation != null) worker.Build(productionBuilding, buildLocation.Value);
-                          }
-                     }
-                 }
-            }
-
-            // 6. Train Army
-            UnitType basicUnit = GetBasicCombatUnit(self.GetRace());
-            bool allowedToTrainArmy = !isInOpening || (self.GetRace() == Race.Zerg); 
-            if (isInOpening && self.GetRace() != Race.Zerg)
-            {
-                 if (self.Minerals() > 200) allowedToTrainArmy = true;
-            }
-
-            if (allowedToTrainArmy && ((baseCount >= 2 || self.Minerals() > 500) || isInOpening) && basicUnit != UnitType.None && self.Minerals() >= basicUnit.MineralPrice() && self.SupplyUsed() < self.SupplyTotal())
-            {
-                if (self.GetRace() == Race.Zerg)
-                {
-                    var larva = allMyUnits.FirstOrDefault(u => u.GetUnitType() == UnitType.Zerg_Larva);
-                     bool hasPool = allMyUnits.Any(u => u.GetUnitType() == UnitType.Zerg_Spawning_Pool && u.IsCompleted());
-                     if (larva != null && hasPool) larva.Train(basicUnit);
-                }
                 else
                 {
-                    foreach (var building in allMyUnits)
-                    {
-                        if (building.GetUnitType() == productionBuilding && !building.IsTraining() && building.IsCompleted())
-                        {
-                            building.Train(basicUnit);
-                        }
-                    }
-                }
-            }
-
-            // 7. Improved Attack Logic
-            var startLoc = self.GetStartLocation();
-            var rallyPoint = new Position(startLoc.X * 32, startLoc.Y * 32); 
-
-            // State Transition
-            if (army.Count >= 20) _isAttacking = true;
-            if (army.Count < 10) _isAttacking = false;
-
-            if (_isAttacking)
-            {
-                Game.DrawTextScreen(10, 60, "Status: HUNTING / ATTACKING");
-                
-                Position attackTarget = new Position(0,0); // Default invalid
-                bool targetFound = false;
-
-                // Priority 1: Visible Enemy Units
-                var visibleEnemies = Game.Enemy().GetUnits().Where(u => u.IsVisible() && u.GetHitPoints() > 0).ToList();
-                if (visibleEnemies.Count > 0)
-                {
-                    // Target the closest enemy to our first army unit
-                    if (army.Count > 0)
-                    {
-                        var leader = army[0];
-                        var closest = visibleEnemies.OrderBy(e => leader.GetDistance(e)).First();
-                        attackTarget = closest.GetPosition();
-                        targetFound = true;
-                    }
-                }
-                
-                // Priority 2: Hunt Enemy Bases
-                if (!targetFound)
-                {
-                    var enemyLocs = Game.GetStartLocations().Where(l => l != startLoc).ToList();
-                    if (enemyLocs.Count > 0)
-                    {
-                        // Cycle through locations over time (change every ~80 seconds / 2000 frames)
-                        int index = (Game.GetFrameCount() / 2000) % enemyLocs.Count;
-                        var loc = enemyLocs[index];
-                        attackTarget = new Position(loc.X * 32, loc.Y * 32);
-                        targetFound = true;
-                    }
-                }
-
-                if (targetFound)
-                {
-                    foreach (var unit in army)
-                    {
-                        // Spam command periodically to keep them moving/re-targeting
-                        // Or if they are idle
-                        if (unit.IsIdle() || (Game.GetFrameCount() % 50 == 0))
-                        {
-                            unit.Attack(attackTarget);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // Rally at home
-                Game.DrawTextScreen(10, 60, $"Status: Rallying (Size: {army.Count}/20)");
-                foreach (var unit in army)
-                {
-                    if (unit.GetDistance(rallyPoint) > 300) 
-                    {
-                        // Use Attack move to rally point so they fight if intercepted
-                        if (!unit.IsMoving() && !unit.IsAttacking())
-                        {
-                             unit.Attack(rallyPoint); 
-                        }
-                    }
+                    // Mark location as explored
+                    _scoutingIntel.MarkLocationExplored(targetLocation.Value);
                 }
             }
         }
-        catch (Exception e)
+    }
+
+    private void DrawDebugInfo(Player self)
+    {
+        if (Game == null) return;
+
+        var allUnits = self.GetUnits();
+        var army = self.GetCombatUnits();
+
+        // Basic stats
+        Game.DrawTextScreen(10, 10, $"Supply: {self.SupplyUsed()/2} / {self.SupplyTotal()/2}");
+        Game.DrawTextScreen(10, 20, $"Minerals: {self.Minerals()}  Gas: {self.Gas()}");
+        Game.DrawTextScreen(10, 30, $"Workers: {allUnits.Count(u => u.GetUnitType().IsWorker())}");
+        Game.DrawTextScreen(10, 40, $"Army: {army.Count} (Supply: {army.GetTotalSupplyUsed()/2})");
+        Game.DrawTextScreen(10, 50, $"Bases: {self.GetCompletedBases().Count}");
+
+        // Tech and strategy
+        Game.DrawTextScreen(10, 70, $"Tech Tier: {_techManager!.CurrentTier}");
+        Game.DrawTextScreen(10, 80, $"Army State: {_armyManager!.GetStateDescription()}");
+        Game.DrawTextScreen(10, 90, $"Build Order: {_buildOrderManager!.GetCurrentBuildOrderName()}");
+        Game.DrawTextScreen(10, 100, $"Opening: {(!_buildOrderManager.IsOpeningComplete() ? "Active" : "Complete")}");
+
+        // Threat warnings
+        if (_threatAssessment!.IsUnderAttack())
         {
-            Console.WriteLine(e);
-            Game.DrawTextScreen(10, 200, $"ERROR: {e.Message}");
+            Game.DrawTextScreen(200, 10, "!!! UNDER ATTACK !!!");
+            var threat = _threatAssessment.GetMostSeriousThreat();
+            if (threat != null)
+            {
+                Game.DrawTextScreen(200, 20, $"Threat: {threat.Level} ({threat.ThreatSupply/2} supply)");
+            }
         }
-    }
-    
-    // Helper to find build location
-    private TilePosition? GetBuildLocation(TilePosition near, UnitType building)
-    {
-        // Simple spiral search or random search nearby
-        // Game.GetBuildLocation is not always available in basic wrappers, so we implement a simple search
-        // Check 20x20 area around 'near'
-        
-        bool[,] map = new bool[100,100]; // Visited
-        
-        for (int r = 1; r < 20; r++)
+
+        // Enemy intel
+        if (_scoutingIntel!.HasDiscoveredEnemy())
         {
-             // Try some random spots at distance r
-             for(int i=0; i<10; i++)
-             {
-                 int dx = new Random().Next(-r, r);
-                 int dy = new Random().Next(-r, r);
-                 TilePosition target = new TilePosition(near.X + dx, near.Y + dy);
-                 
-                 // Verify bounds (ignoring map size for brevity, but assume positive)
-                 if (target.X < 0 || target.Y < 0) continue;
+            Game.DrawTextScreen(10, 120, $"Enemy Army: {_scoutingIntel.EnemyArmySupply/2} supply");
+            Game.DrawTextScreen(10, 130, $"Enemy Bases: {_scoutingIntel.GetEnemyBases().Count}");
 
-                 if (Game.CanBuildHere(target, building))
-                 {
-                     return target;
-                 }
-             }
+            if (_scoutingIntel.ObservedTechBuildings.Any())
+            {
+                Game.DrawTextScreen(10, 140, $"Enemy Tech: {_scoutingIntel.ObservedTechBuildings.Count} buildings");
+            }
         }
-        return null;
-    }
 
-    private UnitType GetBasicProductionBuilding(Race race)
-    {
-        if (race == Race.Terran) return UnitType.Terran_Barracks;
-        if (race == Race.Protoss) return UnitType.Protoss_Gateway;
-        if (race == Race.Zerg) return UnitType.Zerg_Spawning_Pool;
-        return UnitType.None;
-    }
-
-    private UnitType GetBasicCombatUnit(Race race)
-    {
-        if (race == Race.Terran) return UnitType.Terran_Marine;
-        if (race == Race.Protoss) return UnitType.Protoss_Zealot;
-        if (race == Race.Zerg) return UnitType.Zerg_Zergling;
-        return UnitType.None;
+        // Map info
+        Game.DrawTextScreen(10, 160, $"Map: {_mapAnalysis!.GetMapSizeDescription()}");
     }
 
     public override void OnUnitComplete(Unit unit) { }
