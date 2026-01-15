@@ -85,9 +85,47 @@ public class MyStarcraftBot : DefaultBWListener
 
     public override void OnEnd(bool isWinner)
     {
+        if (Game != null)
+        {
+            var self = Game.Self();
+            var record = new GameRecord
+            {
+                Timestamp = DateTime.Now,
+                MapName = Game.MapName(),
+                PlayerCount = Game.GetPlayers().Count,
+                Race = self.GetRace().ToString(),
+                Result = isWinner ? "Win" : "Loss",
+                Duration = TimeSpan.FromSeconds(Game.GetFrameCount() / 24).ToString(@"mm\:ss"),
+                Minerals = self.Minerals(),
+                Gas = self.Gas(),
+                SupplyUsed = self.SupplyUsed() / 2,
+                SupplyTotal = self.SupplyTotal() / 2,
+                WorkerCount = self.GetUnits().Count(u => u.GetUnitType().IsWorker()),
+                ArmyCount = self.GetCombatUnits().Count,
+                BuildOrder = _buildOrderManager?.GetCurrentBuildOrderName() ?? "Unknown"
+            };
+
+            GameStatLogger.LogGameResult(record);
+            Console.WriteLine("Game Stats Saved.");
+        }
+
         InGame = false;
         StatusChanged?.Invoke();
         Console.WriteLine(isWinner ? "We Won!" : "We Lost.");
+
+        // Stop running immediately as requested
+        if (Game != null)
+        {
+            try { Game.LeaveGame(); } catch {}
+        }
+
+        Console.WriteLine("Disconnecting asynchronously...");
+        Task.Run(() => 
+        {
+            Task.Delay(100).Wait(); // Give it a moment to clear the callback
+            Disconnect();
+            Console.WriteLine("Bot Disconnected.");
+        });
     }
 
 
@@ -107,20 +145,23 @@ public class MyStarcraftBot : DefaultBWListener
 
         try
         {
+            // ===== 0. HOUSEKEEPING =====
+            _economyManager!.ClearReservations();
+
             // ===== 1. INTELLIGENCE GATHERING =====
             _scoutingIntel!.Update(Game);
             _threatAssessment!.Update(Game, self, _scoutingIntel);
             _mapAnalysis!.Update(Game, self);
 
             // ===== 2. STRATEGIC PLANNING =====
-            _buildOrderManager!.Update(Game, self, _scoutingIntel, _mapAnalysis);
+            _buildOrderManager!.Update(Game, self, _scoutingIntel, _mapAnalysis, _economyManager, _buildManager!);
             _economyManager!.Update(Game, self, _scoutingIntel, _buildOrderManager);
             _techManager!.Update(Game, self, _scoutingIntel, _buildOrderManager);
 
             // ===== 3. TACTICAL EXECUTION =====
             _buildManager!.Update(Game, self, _workerManager);
             _workerManager!.Update(Game, self, _threatAssessment, _economyManager);
-            _armyManager!.Update(Game, self, _threatAssessment, _scoutingIntel, _techManager);
+            _armyManager!.Update(Game, self, _threatAssessment, _scoutingIntel, _techManager, _economyManager);
 
             // ===== 4. SUPPORT SYSTEMS =====
             ManageScout(self);

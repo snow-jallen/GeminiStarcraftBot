@@ -31,7 +31,7 @@ public class EconomyManager
         BuildRefineries(game, self);
 
         // Clear reservations at end of frame (they'll be re-reserved next frame)
-        ClearReservations();
+        // MOVED TO START OF FRAME IN BOT CLASS
     }
 
     private void UpdateTargetWorkerCount(Player self)

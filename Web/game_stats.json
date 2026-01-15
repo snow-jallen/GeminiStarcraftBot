@@ -1,0 +1,62 @@
+[
+  {
+    "Timestamp": "2026-01-15T12:05:51.8983328-07:00",
+    "MapName": "Alpha Draconis Volcanic World",
+    "PlayerCount": 3,
+    "Race": "Terran",
+    "Result": "Loss",
+    "Duration": "07:48",
+    "Minerals": 4,
+    "Gas": 0,
+    "SupplyUsed": 0,
+    "SupplyTotal": 0,
+    "WorkerCount": 0,
+    "ArmyCount": 0,
+    "BuildOrder": "1 Factory Expand"
+  },
+  {
+    "Timestamp": "2026-01-15T12:05:20.0383813-07:00",
+    "MapName": "Alpha Draconis Volcanic World",
+    "PlayerCount": 3,
+    "Race": "Terran",
+    "Result": "Loss",
+    "Duration": "12:33",
+    "Minerals": 12,
+    "Gas": 1376,
+    "SupplyUsed": 0,
+    "SupplyTotal": 0,
+    "WorkerCount": 0,
+    "ArmyCount": 0,
+    "BuildOrder": "1 Factory Expand"
+  },
+  {
+    "Timestamp": "2026-01-15T12:04:46.1460695-07:00",
+    "MapName": "Alpha Draconis Volcanic World",
+    "PlayerCount": 3,
+    "Race": "Zerg",
+    "Result": "Loss",
+    "Duration": "08:40",
+    "Minerals": 2400,
+    "Gas": 1614,
+    "SupplyUsed": 0,
+    "SupplyTotal": 8,
+    "WorkerCount": 0,
+    "ArmyCount": 0,
+    "BuildOrder": "12 Hatch"
+  },
+  {
+    "Timestamp": "2026-01-15T11:59:58.269548-07:00",
+    "MapName": "Alpha Draconis Volcanic World",
+    "PlayerCount": 3,
+    "Race": "Terran",
+    "Result": "Loss",
+    "Duration": "13:32",
+    "Minerals": 6,
+    "Gas": 2448,
+    "SupplyUsed": 0,
+    "SupplyTotal": 0,
+    "WorkerCount": 0,
+    "ArmyCount": 0,
+    "BuildOrder": "1 Factory Expand"
+  }
+]

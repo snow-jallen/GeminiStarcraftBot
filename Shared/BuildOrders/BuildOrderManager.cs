@@ -1,5 +1,6 @@
 using BWAPI.NET;
 using Shared.Intelligence;
+using Shared.Managers;
 
 namespace Shared.BuildOrders;
 
@@ -10,8 +11,15 @@ public class BuildOrderManager
     private bool _buildOrderComplete = false;
     private bool _hasSelectedBuildOrder = false;
 
-    public void Update(Game game, Player self, ScoutingIntelligence intel, MapAnalysis map)
+    public void Update(Game game, Player self, ScoutingIntelligence intel, MapAnalysis map, EconomyManager economy, BuildManager buildManager)
     {
+        // SAFETY: Force completion if game is long or we have high supply
+        if (!_buildOrderComplete && (game.GetFrameCount() > 12000 || self.SupplyUsed() > 120))
+        {
+             _buildOrderComplete = true;
+             Console.WriteLine("Forcing Build Order Completion (Safety Trigger)");
+        }
+
         // Select build order on first update
         if (!_hasSelectedBuildOrder)
         {
@@ -22,7 +30,7 @@ public class BuildOrderManager
         // Execute current build order if not complete
         if (!_buildOrderComplete && _currentBuildOrder != null)
         {
-            _buildOrderComplete = _executor.ExecuteCurrentStep(game, self, _currentBuildOrder);
+            _buildOrderComplete = _executor.ExecuteCurrentStep(game, self, _currentBuildOrder, economy, buildManager);
         }
 
         // Adapt build order if needed

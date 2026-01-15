@@ -20,7 +20,7 @@ public class ArmyManager
     private Dictionary<int, int> _unitLastMicroFrame = new();
     private Dictionary<int, int> _unitLastAttackFrame = new();
 
-    public void Update(Game game, Player self, ThreatAssessment threats, ScoutingIntelligence intel, TechManager tech)
+    public void Update(Game game, Player self, ThreatAssessment threats, ScoutingIntelligence intel, TechManager tech, EconomyManager economy)
     {
         var army = self.GetCombatUnits();
 
@@ -28,7 +28,7 @@ public class ArmyManager
         UpdateRallyPoint(self);
 
         // Train units
-        TrainUnits(game, self, tech);
+        TrainUnits(game, self, tech, economy);
 
         // Update army state
         UpdateArmyState(game, self, army, threats, intel);
@@ -47,7 +47,7 @@ public class ArmyManager
         }
     }
 
-    private void TrainUnits(Game game, Player self, TechManager tech)
+    private void TrainUnits(Game game, Player self, TechManager tech, EconomyManager economy)
     {
         var race = self.GetRace();
 
@@ -65,9 +65,9 @@ public class ArmyManager
         if (!tech.HasRequiredTech(unitToTrain, self))
             return;
 
-        // Check resources
-        if (self.Minerals() < unitToTrain.MineralPrice() ||
-            self.Gas() < unitToTrain.GasPrice())
+        // Check resources (Use EconomyManager!)
+        if (economy.GetAvailableMinerals(self) < unitToTrain.MineralPrice() ||
+            economy.GetAvailableGas(self) < unitToTrain.GasPrice())
             return;
 
         // Train based on race

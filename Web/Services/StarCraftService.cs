@@ -1,16 +1,35 @@
 using System.Diagnostics;
 using Microsoft.Win32;
 using Shared;
+using Microsoft.Extensions.Hosting;
 
 namespace Web.Services;
 
 public class StarCraftService
 {
     private readonly MyStarcraftBot _starcraftBot;
+    private readonly IHostApplicationLifetime _appLifetime;
 
-    public StarCraftService(MyStarcraftBot starcraftBot)
+    public StarCraftService(MyStarcraftBot starcraftBot, IHostApplicationLifetime appLifetime)
     {
         _starcraftBot = starcraftBot;
+        _appLifetime = appLifetime;
+        _starcraftBot.StatusChanged += OnBotStatusChanged;
+    }
+
+    private void OnBotStatusChanged()
+    {
+        if (!_starcraftBot.IsRunning && !_starcraftBot.InGame && _chaosLauncherProcess != null)
+        {
+            Console.WriteLine("Bot stopped. Cleaning up StarCraft processes and killing application...");
+            StopAndReset();
+            
+            // Wait a tiny bit for logs to flush
+            Task.Delay(500).Wait();
+            
+            Console.WriteLine("Exiting process.");
+            Environment.Exit(0);
+        }
     }
 
     private Process? _chaosLauncherProcess;

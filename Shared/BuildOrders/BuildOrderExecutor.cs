@@ -5,7 +5,7 @@ namespace Shared.BuildOrders;
 
 public class BuildOrderExecutor
 {
-    public bool ExecuteCurrentStep(Game game, Player self, BuildOrder buildOrder, BuildManager? buildManager = null)
+    public bool ExecuteCurrentStep(Game game, Player self, BuildOrder buildOrder, EconomyManager economy, BuildManager? buildManager = null)
     {
         if (buildOrder.CurrentStepIndex >= buildOrder.Steps.Count)
         {
@@ -14,6 +14,13 @@ public class BuildOrderExecutor
         }
 
         var step = buildOrder.Steps[buildOrder.CurrentStepIndex];
+
+        // Reserve resources if we are at the target supply
+        // This prevents ArmyManager from spending money we need for this step
+        if (self.SupplyUsed() >= step.Supply)
+        {
+            ReserveResourcesForStep(step, economy);
+        }
 
         // Check if we've reached the required supply for this step
         if (self.SupplyUsed() < step.Supply)
@@ -32,6 +39,26 @@ public class BuildOrderExecutor
         }
 
         return buildOrder.CurrentStepIndex >= buildOrder.Steps.Count;
+    }
+
+    private void ReserveResourcesForStep(BuildStep step, EconomyManager economy)
+    {
+        int minerals = 0;
+        int gas = 0;
+
+        if (step.BuildingToBuild != null)
+        {
+            minerals = step.BuildingToBuild.Value.MineralPrice();
+            gas = step.BuildingToBuild.Value.GasPrice();
+        }
+        else if (step.UnitToTrain != null)
+        {
+             minerals = step.UnitToTrain.Value.MineralPrice();
+             gas = step.UnitToTrain.Value.GasPrice();
+        }
+
+        economy.ReserveMinerals(minerals);
+        economy.ReserveGas(gas);
     }
 
     private bool ExecuteStep(Game game, Player self, BuildStep step, BuildManager? buildManager)

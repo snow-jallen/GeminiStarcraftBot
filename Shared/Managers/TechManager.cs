@@ -36,8 +36,8 @@ public class TechManager
 
         _lastTechCheckFrame = game.GetFrameCount();
 
-        // Don't tech during opening
-        if (!buildOrder.IsOpeningComplete())
+        // Don't tech during opening unless we are floating money
+        if (!buildOrder.IsOpeningComplete() && self.Minerals() < 800)
             return;
 
         // Update tech tier based on conditions
@@ -257,7 +257,7 @@ public class TechManager
             return availableUnits.Last();
         }
 
-        // Fallback to basic unit
+        // Fallback to basic unit - CRITICAL FIX: Ensure we always try to build something
         if (race == Race.Terran) return UnitType.Terran_Marine;
         if (race == Race.Protoss) return UnitType.Protoss_Zealot;
         if (race == Race.Zerg) return UnitType.Zerg_Zergling;
